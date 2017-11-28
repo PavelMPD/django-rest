@@ -1,8 +1,15 @@
 from django.db import models
+from django.db import transaction
+from django.contrib.auth import models as auth_models
 from django.utils.translation import ugettext_lazy as _
 
+
 class AgentManager(models.Manager):
-    pass
+    def create_with_details(self, user, **kwargs):
+        with transaction.atomic():
+            user = auth_models.User.objects.create(**user)
+            agent = self.create(user=user, **kwargs)
+            return agent
 
 
 class Agent(models.Model):
@@ -16,8 +23,7 @@ class Agent(models.Model):
     )
 
     user = models.OneToOneField(
-        "jango.contrib.auth.User", on_delete=models.CASCADE,
-        verbose_name=_("User"))
+        auth_models.User, on_delete=models.CASCADE, verbose_name=_("User"))
     role = models.CharField(
         verbose_name=_("Role"), max_length=255, choices=USER_ROLES, null=False,
         blank=False)
